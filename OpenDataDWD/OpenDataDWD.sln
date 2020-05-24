@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDataDWD", "OpenDataDWD\OpenDataDWD.csproj", "{8C195DD3-D6CA-49D1-A9CD-476135B29DFA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8C195DD3-D6CA-49D1-A9CD-476135B29DFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C195DD3-D6CA-49D1-A9CD-476135B29DFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C195DD3-D6CA-49D1-A9CD-476135B29DFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C195DD3-D6CA-49D1-A9CD-476135B29DFA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {29B8895B-866A-438F-90A4-762429611E88}
+	EndGlobalSection
+EndGlobal
