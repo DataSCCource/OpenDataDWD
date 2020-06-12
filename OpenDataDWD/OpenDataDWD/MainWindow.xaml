@@ -4,9 +4,35 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OpenDataDWD"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        xmlns:m="clr-namespace:Microsoft.Maps.MapControl.WPF;assembly=Microsoft.Maps.MapControl.WPF"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Klimadaten des DWD" Height="900" Width="800">
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="10"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="10"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="10"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Grid.Column="1">
+            <Label FontSize="20" VerticalAlignment="Center">Filtern nach Bundesland: </Label>
+            <ComboBox x:Name="district_cb" SelectionChanged="District_cb_SelectionChanged" FontSize="20" VerticalAlignment="Center" Width="300" IsEditable="False"/>
+        </StackPanel>
+        <m:Map Grid.Row="2" Grid.Column="1" CredentialsProvider="As6muUH5TfUxFMMRuZzHWNkWUbkNReiyxn7j3ofFdVl9fCglmRWgCivf6EHy-noQ"
+               Center="51.221918,10.313215" ZoomLevel="5.8" x:Name="myMap">
+            
+        </m:Map>
+        <oxy:Plot x:Name="myPlot" Grid.Row="3" Grid.Column="1">
+            <oxy:Plot.Series>
+                <oxy:LineSeries x:Name="mySeries"/>
+            </oxy:Plot.Series>
+        </oxy:Plot>
     </Grid>
 </Window>
