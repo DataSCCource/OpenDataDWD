@@ -60,7 +60,6 @@
     </ApplicationDefinition>
     <Compile Include="Model\ClimateData.cs" />
     <Compile Include="Model\PushPinWithID.cs" />
-    <Compile Include="Model\Station.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -92,6 +91,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="myDatabase.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -104,15 +106,27 @@
     <Resource Include="Daten\KL_Standardformate_Beschreibung_Stationen.txt" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Dapper">
+      <Version>2.0.35</Version>
+    </PackageReference>
     <PackageReference Include="OxyPlot.Wpf">
       <Version>2.0.0</Version>
     </PackageReference>
     <PackageReference Include="sqlite">
       <Version>3.13.0</Version>
     </PackageReference>
+    <PackageReference Include="System.Data.SQLite.Core">
+      <Version>1.0.113.1</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Daten\kl_10004_00_akt.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DatabaseAccess\DatabaseAccess.csproj">
+      <Project>{a7c11d15-55a2-459d-a305-9d76b94b5608}</Project>
+      <Name>DatabaseAccess</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -17,6 +17,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using OxyPlot;
+using DatabaseAccess;
 
 namespace OpenDataDWD
 {
@@ -33,25 +34,15 @@ namespace OpenDataDWD
             InitializeComponent();
             myMap.Focus();
 
-            stations = ReadStations();
+            stations = SqliteDataAccess.LoadStations();
+
             AddDistrictItems(stations);
             AddPushPins(stations);
         }
 
-        private List<Station> ReadStations()
-        {
-            List<Station> stations = new List<Station>();
-            var stationsStrings = File.ReadAllLines("../../Daten/KL_Standardformate_Beschreibung_Stationen.txt", Encoding.GetEncoding(ANSI));
-
-            stationsStrings.Where(x => x.StartsWith("10")).ToList()
-                           .ForEach(line => stations.Add(GetStationFromString(line)) );
-
-            return stations;
-        }
-
         private void AddDistrictItems(List<Station> stations)
         {
-            var districtNames = stations.Select(station => station.FederalState).Distinct().ToList();
+            var districtNames = stations.Select(station => station.FederalState.FederalStateName).Distinct().ToList();
             districtNames.Add("--- Alle ---");
             districtNames.Sort();
             district_cb.ItemsSource = districtNames;
@@ -65,7 +56,7 @@ namespace OpenDataDWD
             {
                 PushPinWithID pin = new PushPinWithID()
                 {
-                    Id = station.StationID,
+                    Id = station.Id,
                     Location = new Location(station.Latitude, station.Longitude),
                     ToolTip = station.StationName,
                     Content = station.StationHeight,
@@ -74,7 +65,7 @@ namespace OpenDataDWD
                 myMap.Children.Add(pin);
                 pin.MouseRightButtonDown += Pin_MouseUp;
 
-                string toolTipString = $"Kennung: {station.StationKE}\nID: {station.StationID}\nName: {station.StationName}\nBundesland: {station.FederalState}";
+                string toolTipString = $"Kennung: {station.StationKE}\nID: {station.Id}\nName: {station.StationName}\nBundesland: {station.FederalState.FederalStateName}";
                 ToolTipService.SetToolTip(pin, toolTipString);
             });
         }
@@ -82,8 +73,8 @@ namespace OpenDataDWD
         private void Pin_MouseUp(object sender, MouseButtonEventArgs e)
         {
             Random r = new Random();
-            string stationID = ((PushPinWithID)e.Source).Id;
-            Station station = stations.Where(st => st.StationID.Equals(stationID)).First();
+            int stationID = ((PushPinWithID)e.Source).Id;
+            Station station = stations.Where(st => st.Id.Equals(stationID)).First();
 
             myPlot.Title = station.StationName;
             List<DataPoint> ldp = new List<DataPoint>();
@@ -95,52 +86,13 @@ namespace OpenDataDWD
             mySeries.ItemsSource = ldp;
         }
 
-        private Station GetStationFromString(string line)
-        {
-            var sMapper = GetStationMappers();
-            return new Station()
-            {
-                StationKE = line.Substring(sMapper[0].Start, sMapper[0].Length).Trim(),
-                StationID = line.Substring(sMapper[1].Start, sMapper[1].Length).Trim(),
-                DataFrom = DateTime.ParseExact(line.Substring(sMapper[2].Start, sMapper[2].Length).Trim(), "yyyyMMdd", CultureInfo.InvariantCulture),
-                DataTo = DateTime.ParseExact(line.Substring(sMapper[3].Start, sMapper[3].Length).Trim(), "yyyyMMdd", CultureInfo.InvariantCulture),
-                StationHeight = int.Parse(line.Substring(sMapper[4].Start, sMapper[4].Length).Trim()),
-                Latitude = float.Parse(line.Substring(sMapper[5].Start, sMapper[5].Length).Trim(), CultureInfo.InvariantCulture),
-                Longitude = float.Parse(line.Substring(sMapper[6].Start, sMapper[6].Length).Trim(), CultureInfo.InvariantCulture),
-                StationName = line.Substring(sMapper[7].Start, sMapper[7].Length).Trim(),
-                FederalState = line.Substring(sMapper[8].Start, sMapper[8].Length).Trim(),
-            };
-        }
-
-        private List<DataField> GetStationMappers()
-        {
-            return new List<DataField>
-            {
-                new DataField { Start=0, Length=5 },
-                new DataField { Start=6, Length=5 },
-                new DataField { Start=12, Length=8 },
-                new DataField { Start=21, Length=8 },
-                new DataField { Start=31, Length=8 },
-                new DataField { Start=40, Length=10 },
-                new DataField { Start=51, Length=10 },
-                new DataField { Start=62, Length=25 },
-                new DataField { Start=88, Length=25 },
-            };
-        }
-
         private void District_cb_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (district_cb.SelectedIndex == 0)
                 AddPushPins(stations);
             else
-                AddPushPins(stations.Where(station => station.FederalState == district_cb.SelectedItem.ToString()).ToList());
+                AddPushPins(stations.Where(station => station.FederalState.FederalStateName == district_cb.SelectedItem.ToString()).ToList());
             
         }
-    }
-
-    struct DataField
-    {
-        public int Start;
-        public int Length;
     }
 }
