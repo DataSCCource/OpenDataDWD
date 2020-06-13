@@ -34,7 +34,8 @@ namespace OpenDataDWD
             InitializeComponent();
             myMap.Focus();
 
-            stations = SqliteDataAccess.LoadStations();
+            IDatabaseAccess dataAccess = new SqliteDataAccess();
+            stations = dataAccess.LoadStations();
 
             AddDistrictItems(stations);
             AddPushPins(stations);
@@ -92,7 +93,6 @@ namespace OpenDataDWD
                 AddPushPins(stations);
             else
                 AddPushPins(stations.Where(station => station.FederalState.FederalStateName == district_cb.SelectedItem.ToString()).ToList());
-            
         }
     }
 }

@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace DatabaseAccess
 {
-    public class SqliteDataAccess
+    public class SqliteDataAccess : IDatabaseAccess
     {
-        public static List<Station> LoadStations()
+        public List<Station> LoadStations()
         {
             using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
             {
@@ -23,7 +23,7 @@ namespace DatabaseAccess
             }
         }
 
-        public static void SaveStation(Station station)
+        public void SaveStation(Station station)
         {
             using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
             {
@@ -42,31 +42,29 @@ namespace DatabaseAccess
                     FOREIGN KEY('fk_FederalState') REFERENCES 'FederalStates'('Id') ON DELETE SET DEFAULT ON UPDATE CASCADE
                 ); ");
 
-
                 string sql = "INSERT OR IGNORE INTO Stations " +
-                            "(Id, StationKE, StationName, DateFrom, DateTo, StationHeight, Latitude, Longitude, fk_FederalState) " +
+                    "(Id, StationKE, StationName, DateFrom, DateTo, StationHeight, Latitude, Longitude, fk_FederalState) " +
                     $"SELECT @Id, @StationKE, @StationName, @DateFrom, @DateTo, @StationHeight, @Latitude, @Longitude, Id FROM FederalStates WHERE FederalStateName='{station.FederalState.FederalStateName}'";
 
                 cnn.Execute(sql, station);
             }
         }
 
-        public static void SaveFederalState(FederalState federalState)
+        public void SaveFederalState(FederalState federalState)
         {
             using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
             {
                 // Create Table FederalStates if not exists
-
                 cnn.Execute(@"CREATE TABLE IF NOT EXISTS 'FederalStates' (
                                 'Id'    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
                                 'FederalStateName'  TEXT NOT NULL UNIQUE
-                            );");
+                              );");
 
                 cnn.Execute("INSERT OR IGNORE INTO FederalStates (FederalStateName) VALUES (@FederalStateName)", federalState);
             }
         }
 
-        private static string LoadConnectionString(string id = "Default") 
+        private string LoadConnectionString(string id = "Default") 
         {
             return ConfigurationManager.ConnectionStrings[id].ConnectionString;
         }

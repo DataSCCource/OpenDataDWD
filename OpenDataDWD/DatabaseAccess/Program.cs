@@ -13,38 +13,32 @@ namespace DatabaseAccess
     {
         private const int ANSI = 1252;
 
-        static void Main(string[] args)
+        static void Main()
         {
-            
-            var stations = ReadStations();
-            ImportStationsIntoDatabase(stations);
+            IDatabaseAccess dataAccess = new SqliteDataAccess();
+            var stations = ReadStationsFromFile();
 
-            //var stations = SqliteDataAccess.LoadStations();
-            //Console.WriteLine(stations);
-            //Console.WriteLine(stations.Count);
-            //foreach (var stat in stations)
-            //{
-            //    Console.WriteLine(stat);
-            //}
+
+            ImportStationsIntoDatabase(dataAccess, stations);
 
         }
 
-        private static void ImportStationsIntoDatabase(List<Station> stations)
+        private static void ImportStationsIntoDatabase(IDatabaseAccess dataAccess, List<Station> stations)
         {
             var districtNames = stations.Select(station => station.FederalState.FederalStateName).Distinct().ToList();
             foreach (var districtName in districtNames)
             {
-                SqliteDataAccess.SaveFederalState(new FederalState( 1, districtName ));
+                dataAccess.SaveFederalState(new FederalState( 1, districtName ));
             }
 
             foreach (var station in stations)
             {
-                SqliteDataAccess.SaveStation(station);
+                dataAccess.SaveStation(station);
             }
             
         }
 
-        private static List<Station> ReadStations()
+        private static List<Station> ReadStationsFromFile()
         {
             List<Station> stations = new List<Station>();
             var stationsStrings = File.ReadAllLines("../../Daten/KL_Standardformate_Beschreibung_Stationen.txt", Encoding.GetEncoding(ANSI));

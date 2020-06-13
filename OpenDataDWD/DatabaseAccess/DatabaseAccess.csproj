@@ -52,6 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IDatabaseAccess.cs" />
     <Compile Include="Model\FederalState.cs" />
     <Compile Include="Model\Station.cs" />
     <Compile Include="Program.cs" />
