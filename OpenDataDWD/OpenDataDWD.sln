@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDataDWD", "OpenDataDWD\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseAccess", "DatabaseAccess\DatabaseAccess.csproj", "{A7C11D15-55A2-459D-A305-9D76B94B5608}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDataDWD.Tests", "OpenDataDWD.Tests\OpenDataDWD.Tests.csproj", "{7EC0631D-105A-46EF-B3EC-05DBE8ED601B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{A7C11D15-55A2-459D-A305-9D76B94B5608}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7C11D15-55A2-459D-A305-9D76B94B5608}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7C11D15-55A2-459D-A305-9D76B94B5608}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7EC0631D-105A-46EF-B3EC-05DBE8ED601B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EC0631D-105A-46EF-B3EC-05DBE8ED601B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EC0631D-105A-46EF-B3EC-05DBE8ED601B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EC0631D-105A-46EF-B3EC-05DBE8ED601B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
