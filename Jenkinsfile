@@ -11,7 +11,7 @@ pipeline {
 		}
 		stage('test') {
 			steps {
-#				bat "\"${NUnit}\" OpenDataDWD.Tests/bin/Release/OpenDataDWD.Tests.dll --result=TestR.xml;format=nunit2"
+//				bat "\"${NUnit}\" OpenDataDWD.Tests/bin/Release/OpenDataDWD.Tests.dll --result=TestR.xml;format=nunit2"
 			}
 		}
 	}
