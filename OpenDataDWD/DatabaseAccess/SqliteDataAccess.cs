@@ -90,11 +90,14 @@ namespace DatabaseAccess
         }
 
 
-        public List<ClimateData> LoadClimateData(string stationId)
+        public List<ClimateData> LoadClimateData(string stationId, DateTime dateFrom, DateTime dateTo)
         {
             using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
             {
-                var sql = $"SELECT * FROM ClimateData WHERE StationId='{stationId}'";
+                long secondsFrom = (long)dateFrom.Subtract(DataMapper.UNIX_TIME).TotalSeconds;
+                long secondsTo = (long)dateTo.Subtract(DataMapper.UNIX_TIME).TotalSeconds;
+
+                var sql = $"SELECT * FROM ClimateData WHERE StationId='{stationId}' AND Date>={secondsFrom} AND Date<={secondsTo}";
                 var output = cnn.Query<ClimateData>(sql);
 
                 return output.ToList();

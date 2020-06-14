@@ -10,7 +10,7 @@ namespace DatabaseAccess
     {
         List<Station> LoadStations();
 
-        List<ClimateData> LoadClimateData(string stationId);
+        List<ClimateData> LoadClimateData(string stationId, DateTime dateFrom, DateTime dateTo);
 
         bool StationsDbExists();
 
