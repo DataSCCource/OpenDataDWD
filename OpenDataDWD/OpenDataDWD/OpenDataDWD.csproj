@@ -103,9 +103,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Daten\KL_Standardformate_Beschreibung_Stationen.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Dapper">
       <Version>2.0.35</Version>
     </PackageReference>
@@ -118,9 +115,6 @@
     <PackageReference Include="System.Data.SQLite.Core">
       <Version>1.0.113.1</Version>
     </PackageReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Daten\kl_10004_00_akt.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DatabaseAccess\DatabaseAccess.csproj">
