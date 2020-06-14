@@ -21,21 +21,17 @@ namespace DatabaseAccess
         public override string ToString()
         {
             return StationKE + " " + DateFrom.ToString() + " " + Latitude
-                + " " + GetDataFromDateTime().ToString("yyyy-MM-dd mm:ss");
+                + " " + GetDataFromDateTime().ToString("yyyy-MM-dd mm:ss") + " | " + DateFrom;
         }
 
         public DateTime GetDataFromDateTime()
         {
-            DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
-            dtDateTime = dtDateTime.AddSeconds(DateFrom).ToLocalTime();
-            return dtDateTime;
+            return DataMapper.UNIX_TIME.AddSeconds(DateFrom).ToLocalTime();
         }
 
         public DateTime GetDataToDateTime()
         {
-            DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
-            dtDateTime = dtDateTime.AddSeconds(DateTo).ToLocalTime();
-            return dtDateTime;
+            return DataMapper.UNIX_TIME.AddSeconds(DateTo).ToLocalTime();
         }
     }
 }

@@ -10,6 +10,10 @@ namespace DatabaseAccess
     {
         List<Station> LoadStations();
 
+        bool StationsDbExists();
+
+        void CreateStationsDb();
+
         void SaveStation(Station station);
 
         void SaveFederalState(FederalState federalState);

@@ -27,21 +27,6 @@ namespace DatabaseAccess
         {
             using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
             {
-                // Create Table Stations if not exists
-                cnn.Execute(@"CREATE TABLE IF NOT EXISTS 'Stations' (
-                    'Id'    INTEGER NOT NULL UNIQUE,
-                    'StationKE' TEXT NOT NULL UNIQUE,
-                    'StationName'   TEXT NOT NULL,
-                    'DateFrom'  INTEGER NOT NULL,
-                    'DateTo'    INTEGER NOT NULL,
-                    'StationHeight' INTEGER DEFAULT 0,
-                    'Latitude'  REAL NOT NULL,
-                    'Longitude' REAL NOT NULL,
-                    'fk_FederalState'   INTEGER NOT NULL,
-                    PRIMARY KEY('Id'),
-                    FOREIGN KEY('fk_FederalState') REFERENCES 'FederalStates'('Id') ON DELETE SET DEFAULT ON UPDATE CASCADE
-                ); ");
-
                 string sql = "INSERT OR IGNORE INTO Stations " +
                     "(Id, StationKE, StationName, DateFrom, DateTo, StationHeight, Latitude, Longitude, fk_FederalState) " +
                     $"SELECT @Id, @StationKE, @StationName, @DateFrom, @DateTo, @StationHeight, @Latitude, @Longitude, Id FROM FederalStates WHERE FederalStateName='{station.FederalState.FederalStateName}'";
@@ -54,12 +39,6 @@ namespace DatabaseAccess
         {
             using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
             {
-                // Create Table FederalStates if not exists
-                cnn.Execute(@"CREATE TABLE IF NOT EXISTS 'FederalStates' (
-                                'Id'    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-                                'FederalStateName'  TEXT NOT NULL UNIQUE
-                              );");
-
                 cnn.Execute("INSERT OR IGNORE INTO FederalStates (FederalStateName) VALUES (@FederalStateName)", federalState);
             }
         }
@@ -67,6 +46,46 @@ namespace DatabaseAccess
         private string LoadConnectionString(string id = "Default") 
         {
             return ConfigurationManager.ConnectionStrings[id].ConnectionString;
+        }
+
+        public bool StationsDbExists()
+        {
+            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            {
+                var resFederalStates = cnn.Query("SELECT name FROM sqlite_master WHERE type='table' and name='FederalStates'");
+                var resStations = cnn.Query("SELECT name FROM sqlite_master WHERE type='table' and name='Stations'");
+
+                return resFederalStates.Count() > 0 && resStations.Count() > 0;
+            }
+        }
+
+        public void CreateStationsDb()
+        {
+            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            {
+                // Create Table FederalStates if not exists
+                cnn.Execute(@"CREATE TABLE IF NOT EXISTS 'FederalStates' (
+                                'Id'    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+                                'FederalStateName'  TEXT NOT NULL UNIQUE
+                            );");
+
+                // Create Table Stations if not exists
+                cnn.Execute(@"CREATE TABLE IF NOT EXISTS 'Stations' (
+                                'Id'    INTEGER NOT NULL UNIQUE,
+                                'StationKE' TEXT NOT NULL UNIQUE,
+                                'StationName'   TEXT NOT NULL,
+                                'DateFrom'  INTEGER NOT NULL,
+                                'DateTo'    INTEGER NOT NULL,
+                                'StationHeight' INTEGER DEFAULT 0,
+                                'Latitude'  REAL NOT NULL,
+                                'Longitude' REAL NOT NULL,
+                                'fk_FederalState'   INTEGER NOT NULL,
+                                PRIMARY KEY('Id'),
+                                FOREIGN KEY('fk_FederalState') REFERENCES 'FederalStates'('Id') ON DELETE SET DEFAULT ON UPDATE CASCADE
+                            ); ");
+
+
+            }
         }
     }
 }

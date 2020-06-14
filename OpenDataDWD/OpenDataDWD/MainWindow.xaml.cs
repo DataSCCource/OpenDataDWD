@@ -35,6 +35,11 @@ namespace OpenDataDWD
             myMap.Focus();
 
             IDatabaseAccess dataAccess = new SqliteDataAccess();
+
+            if(!dataAccess.StationsDbExists())
+            {
+                dataAccess.CreateStationsDb();
+            }
             stations = dataAccess.LoadStations();
 
             AddDistrictItems(stations);
@@ -75,16 +80,15 @@ namespace OpenDataDWD
         {
             Random r = new Random();
             int stationID = ((PushPinWithID)e.Source).Id;
-            Station station = stations.Where(st => st.Id.Equals(stationID)).First();
+            Station station = stations.Where(st => st.Id == stationID).First();
 
             myPlot.Title = station.StationName;
-            List<DataPoint> ldp = new List<DataPoint>();
+            List<DataPoint> dataPoints = new List<DataPoint>();
             for (int i = 0; i < 100; i++)
             {
-                ldp.Add(new DataPoint(i, r.Next(0, 20)));
+                dataPoints.Add(new DataPoint(i, r.Next(0, 20)));
             }
-
-            mySeries.ItemsSource = ldp;
+            mySeries.ItemsSource = dataPoints;
         }
 
         private void District_cb_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -92,7 +96,7 @@ namespace OpenDataDWD
             if (district_cb.SelectedIndex == 0)
                 AddPushPins(stations);
             else
-                AddPushPins(stations.Where(station => station.FederalState.FederalStateName == district_cb.SelectedItem.ToString()).ToList());
+                AddPushPins(stations.Where(station => station.FederalState.FederalStateName.Equals(district_cb.SelectedItem.ToString())).ToList());
         }
     }
 }
