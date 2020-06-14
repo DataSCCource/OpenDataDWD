@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DatabaseAccess
 {
+    /// <summary>
+    /// One Dataset of Climate Data
+    /// </summary>
     public class ClimateData
     {
         public int Id { get; set; }
@@ -19,17 +18,28 @@ namespace DatabaseAccess
         public float WindForceMiddle { get; set; }
         public float SunshineSum { get; set; }
 
+        /// <summary>
+        /// ToString methode, mostly for debugging purposes
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return GetDate().ToString("yyyy-MM-dd mm:ss") + " | " + StationId + " " + StationNumber + " " 
                 + PressureMiddle + " " + TempMax + " " + TempMin + " " + HumidityMiddle + " " + SunshineSum;
         }
 
+        /// <summary>
+        /// Convert saved unixtime to DateDime
+        /// </summary>
+        /// <returns>DateTime object of this dataset</returns>
         public DateTime GetDate()
         {
             return DataMapper.UNIX_TIME.AddSeconds(Date).ToLocalTime();
         }
 
+        /// <summary>
+        /// Available datatypes 
+        /// </summary>
         public enum DataTypes
         {
             Temperatur_Tagesmaximum, Temperatur_Tagesminimum, Luftdruck_Tagesmittel, Relative_Luftfeuchte, Windstaerke_Tagesmittel, Sonnenscheindauer_Tagessumme

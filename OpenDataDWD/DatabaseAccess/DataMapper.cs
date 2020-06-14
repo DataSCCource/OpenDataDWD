@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DatabaseAccess
 {
+    /// <summary>
+    /// Mapper Class to extract the datafields from a given string
+    /// String has to be in the correct Format!
+    /// </summary>
     abstract class DataMapper
     {
         public static readonly DateTime UNIX_TIME = new DateTime(1970, 1, 1);
@@ -23,6 +24,9 @@ namespace DatabaseAccess
         protected abstract List<DataFieldDefinition> GetMapperList();
     }
 
+    /// <summary>
+    /// Defines start and length of a datafield in a string. 
+    /// </summary>
     struct DataFieldDefinition
     {
         public int Start;

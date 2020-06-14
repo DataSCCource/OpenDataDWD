@@ -5,73 +5,81 @@ using System.Configuration;
 using System.Data;
 using System.Data.SQLite;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DatabaseAccess
 {
     public class SqliteDataAccess : IDatabaseAccess
     {
+        /// <summary>
+        /// Load Connection String for SQLite from the Settings
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        private string LoadConnectionString(string id = "Default")
+        {
+            return ConfigurationManager.ConnectionStrings[id].ConnectionString;
+        }
+
+        /// <inheritdoc/>
         public List<Station> LoadStations()
         {
-            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            using (IDbConnection conn = new SQLiteConnection(LoadConnectionString()))
             {
                 var sql = @"SELECT * FROM Stations s INNER JOIN FederalStates fs ON fs.Id = s.fk_FederalState";
-                var output = cnn.Query<Station, FederalState, Station>(sql, (station, federalstate) => { station.FederalState = federalstate; return station; });
+                var output = conn.Query<Station, FederalState, Station>(sql, (station, federalstate) => { station.FederalState = federalstate; return station; });
 
                 return output.ToList();
             }
         }
 
+        /// <inheritdoc/>
         public void SaveStation(Station station)
         {
-            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            using (IDbConnection conn = new SQLiteConnection(LoadConnectionString()))
             {
                 string sql = "INSERT OR IGNORE INTO Stations " +
                     "(Id, StationKE, StationName, DateFrom, DateTo, StationHeight, Latitude, Longitude, fk_FederalState) " 
                     + "SELECT @Id, @StationKE, @StationName, @DateFrom, @DateTo, @StationHeight, @Latitude, @Longitude, Id "
                     + $"FROM FederalStates WHERE FederalStateName='{station.FederalState.FederalStateName}'";
 
-                cnn.Execute(sql, station);
+                conn.Execute(sql, station);
             }
         }
 
+        /// <inheritdoc/>
         public void SaveFederalState(FederalState federalState)
         {
-            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            using (IDbConnection conn = new SQLiteConnection(LoadConnectionString()))
             {
-                cnn.Execute("INSERT OR IGNORE INTO FederalStates (FederalStateName) VALUES (@FederalStateName)", federalState);
+                conn.Execute("INSERT OR IGNORE INTO FederalStates (FederalStateName) VALUES (@FederalStateName)", federalState);
             }
         }
 
-        private string LoadConnectionString(string id = "Default") 
-        {
-            return ConfigurationManager.ConnectionStrings[id].ConnectionString;
-        }
-
+        /// <inheritdoc/>
         public bool StationsDbExists()
         {
-            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            using (IDbConnection conn = new SQLiteConnection(LoadConnectionString()))
             {
-                var resFederalStates = cnn.Query("SELECT name FROM sqlite_master WHERE type='table' and name='FederalStates'");
-                var resStations = cnn.Query("SELECT name FROM sqlite_master WHERE type='table' and name='Stations'");
+                var resFederalStates = conn.Query("SELECT name FROM sqlite_master WHERE type='table' and name='FederalStates'");
+                var resStations = conn.Query("SELECT name FROM sqlite_master WHERE type='table' and name='Stations'");
 
                 return resFederalStates.Count() > 0 && resStations.Count() > 0;
             }
         }
 
+        /// <inheritdoc/>
         public void CreateStationsDb()
         {
-            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            using (IDbConnection conn = new SQLiteConnection(LoadConnectionString()))
             {
                 // Create Table FederalStates if not exists
-                cnn.Execute(@"CREATE TABLE IF NOT EXISTS 'FederalStates' (
+                conn.Execute(@"CREATE TABLE IF NOT EXISTS 'FederalStates' (
                                 'Id'    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
                                 'FederalStateName'  TEXT NOT NULL UNIQUE
                             );");
 
                 // Create Table Stations if not exists
-                cnn.Execute(@"CREATE TABLE IF NOT EXISTS 'Stations' (
+                conn.Execute(@"CREATE TABLE IF NOT EXISTS 'Stations' (
                                 'StationKE' TEXT NOT NULL UNIQUE,
                                 'Id'    INTEGER NOT NULL UNIQUE,
                                 'StationName'   TEXT NOT NULL,
@@ -84,32 +92,31 @@ namespace DatabaseAccess
                                 PRIMARY KEY('StationKE'),
                                 FOREIGN KEY('fk_FederalState') REFERENCES 'FederalStates'('Id') ON DELETE SET DEFAULT ON UPDATE CASCADE
                             ); ");
-
-
             }
         }
 
-
+        /// <inheritdoc/>
         public List<ClimateData> LoadClimateData(string stationId, DateTime dateFrom, DateTime dateTo)
         {
-            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            using (IDbConnection conn = new SQLiteConnection(LoadConnectionString()))
             {
                 long secondsFrom = (long)dateFrom.Subtract(DataMapper.UNIX_TIME).TotalSeconds;
                 long secondsTo = (long)dateTo.Subtract(DataMapper.UNIX_TIME).TotalSeconds;
 
                 var sql = $"SELECT * FROM ClimateData WHERE StationId='{stationId}' AND Date>={secondsFrom} AND Date<={secondsTo}";
-                var output = cnn.Query<ClimateData>(sql);
+                var output = conn.Query<ClimateData>(sql);
 
                 return output.ToList();
             }
         }
 
+        /// <inheritdoc/>
         public void CreateClimateDataDb()
         {
-            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            using (IDbConnection conn = new SQLiteConnection(LoadConnectionString()))
             {
                 // Create Table ClimateData if not exists
-                cnn.Execute(@"CREATE TABLE IF NOT EXISTS 'ClimateData' (
+                conn.Execute(@"CREATE TABLE IF NOT EXISTS 'ClimateData' (
                                 'Id' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
                                 'StationId' TEXT NOT NULL,
                                 'StationNumber' INTEGER NOT NULL,
@@ -125,24 +132,26 @@ namespace DatabaseAccess
             }
         }
 
+        /// <inheritdoc/>
         public void SaveClimateData(List<ClimateData> climateData)
         {
-            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            using (IDbConnection conn = new SQLiteConnection(LoadConnectionString()))
             {
-                foreach (var cd in climateData)
+                foreach (var cData in climateData)
                 {
-                    cnn.Execute(@"INSERT INTO ClimateData 
+                    conn.Execute(@"INSERT INTO ClimateData 
                                 (StationId, StationNumber, Date, PressureMiddle, TempMax, TempMin, HumidityMiddle, WindForceMiddle, SunshineSum) VALUES 
-                                (@StationId, @StationNumber, @Date, @PressureMiddle, @TempMax, @TempMin, @HumidityMiddle, @WindForceMiddle, @SunshineSum)", cd);
+                                (@StationId, @StationNumber, @Date, @PressureMiddle, @TempMax, @TempMin, @HumidityMiddle, @WindForceMiddle, @SunshineSum)", cData);
                 }
             }
         }
 
+        /// <inheritdoc/>
         public bool ClimateDataDbExists()
         {
-            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            using (IDbConnection conn = new SQLiteConnection(LoadConnectionString()))
             {
-                var resClimateData = cnn.Query("SELECT name FROM sqlite_master WHERE type='table' and name='ClimateData'");
+                var resClimateData = conn.Query("SELECT name FROM sqlite_master WHERE type='table' and name='ClimateData'");
                 return resClimateData.Count() > 0;
             }
         }

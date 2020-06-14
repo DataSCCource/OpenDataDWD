@@ -2,21 +2,24 @@
 
 namespace DatabaseAccess
 {
+    /// <summary>
+    /// Mapper class to define where to find which datafields in a ClimateData string
+    /// </summary>
     class ClimateDataMapper : DataMapper
     {
-        public static readonly int STAT = 0;  // Stationsnummer
-        public static readonly int DATUM = 1; // Datum der Messung
-        public static readonly int PM = 2;    // Tagesmittel des Luftdruckes in Stationshoehe 
-        public static readonly int TXK = 3;   // Tagesmaximum der Temperatur der Luft in 2m Hoehe 
-        public static readonly int TNK = 4;   // Tagesminimum der Temperatur der Luft in 2m Hoehe 
-        public static readonly int UPM = 5;   // Tagesmittel der relativen Feuchte 
-        public static readonly int FMK = 6;   // Tagesmittel der Windstaerke 
-        public static readonly int SDK = 7;   // Tagessumme der Sonnenscheindauer 
+        public static readonly int STAT = 0;  // Stationnumber
+        public static readonly int DATUM = 1; // Date of measurement
+        public static readonly int PM = 2;    // Daily average of air preasure
+        public static readonly int TXK = 3;   // Daily maximum temperature
+        public static readonly int TNK = 4;   // Daily minimum temperature
+        public static readonly int UPM = 5;   // Daily average of humidity
+        public static readonly int FMK = 6;   // Daily average of wind strength
+        public static readonly int SDK = 7;   // Amount of sunsine
 
         /// <summary>
         /// Get List of DataFieldDefinitions for climatedata in KL- and KX-format
         /// </summary>
-        /// <returns></returns>
+        /// <returns>List of DataFieldDefinition of a Climatedata String</returns>
         protected override List<DataFieldDefinition> GetMapperList()
         {
             return new List<DataFieldDefinition>

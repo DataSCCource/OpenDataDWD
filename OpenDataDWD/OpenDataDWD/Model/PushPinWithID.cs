@@ -3,7 +3,7 @@
 namespace OpenDataDWD.Model
 {
     /// <summary>
-    /// PushPin class with an added ID 
+    /// PushPin class with an added ID
     /// </summary>
     public class PushPinWithID : Pushpin
     {

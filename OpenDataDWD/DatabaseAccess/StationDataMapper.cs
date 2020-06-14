@@ -2,6 +2,10 @@
 
 namespace DatabaseAccess
 {
+    /// <summary>
+    /// Mapper class to define where to find which datafields in a Station string
+    /// </summary>
+
     class StationDataMapper : DataMapper
     {
         public static readonly int ST_KE = 0;          // Kennung
@@ -14,6 +18,10 @@ namespace DatabaseAccess
         public static readonly int STATIONSNAME = 7;   // Stationsname
         public static readonly int BUNDESLANDNAME = 8; // Station in Bundesland
 
+        /// <summary>
+        /// Get List of DataFieldDefinitions for climate stations
+        /// </summary>
+        /// <returns>List of DataFieldDefinition of a Station String</returns>
         protected override List<DataFieldDefinition> GetMapperList()
         {
             return new List<DataFieldDefinition>
