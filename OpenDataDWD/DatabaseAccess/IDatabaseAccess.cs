@@ -10,11 +10,19 @@ namespace DatabaseAccess
     {
         List<Station> LoadStations();
 
+        List<ClimateData> LoadClimateData(string stationId);
+
         bool StationsDbExists();
+
+        bool ClimateDataDbExists();
 
         void CreateStationsDb();
 
+        void CreateClimateDataDb();
+
         void SaveStation(Station station);
+
+        void SaveClimateData(List<ClimateData> climateData);
 
         void SaveFederalState(FederalState federalState);
     }

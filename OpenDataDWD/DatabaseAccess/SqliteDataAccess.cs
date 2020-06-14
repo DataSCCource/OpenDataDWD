@@ -28,8 +28,9 @@ namespace DatabaseAccess
             using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
             {
                 string sql = "INSERT OR IGNORE INTO Stations " +
-                    "(Id, StationKE, StationName, DateFrom, DateTo, StationHeight, Latitude, Longitude, fk_FederalState) " +
-                    $"SELECT @Id, @StationKE, @StationName, @DateFrom, @DateTo, @StationHeight, @Latitude, @Longitude, Id FROM FederalStates WHERE FederalStateName='{station.FederalState.FederalStateName}'";
+                    "(Id, StationKE, StationName, DateFrom, DateTo, StationHeight, Latitude, Longitude, fk_FederalState) " 
+                    + "SELECT @Id, @StationKE, @StationName, @DateFrom, @DateTo, @StationHeight, @Latitude, @Longitude, Id "
+                    + $"FROM FederalStates WHERE FederalStateName='{station.FederalState.FederalStateName}'";
 
                 cnn.Execute(sql, station);
             }
@@ -71,8 +72,8 @@ namespace DatabaseAccess
 
                 // Create Table Stations if not exists
                 cnn.Execute(@"CREATE TABLE IF NOT EXISTS 'Stations' (
-                                'Id'    INTEGER NOT NULL UNIQUE,
                                 'StationKE' TEXT NOT NULL UNIQUE,
+                                'Id'    INTEGER NOT NULL UNIQUE,
                                 'StationName'   TEXT NOT NULL,
                                 'DateFrom'  INTEGER NOT NULL,
                                 'DateTo'    INTEGER NOT NULL,
@@ -80,11 +81,66 @@ namespace DatabaseAccess
                                 'Latitude'  REAL NOT NULL,
                                 'Longitude' REAL NOT NULL,
                                 'fk_FederalState'   INTEGER NOT NULL,
-                                PRIMARY KEY('Id'),
+                                PRIMARY KEY('StationKE'),
                                 FOREIGN KEY('fk_FederalState') REFERENCES 'FederalStates'('Id') ON DELETE SET DEFAULT ON UPDATE CASCADE
                             ); ");
 
 
+            }
+        }
+
+
+        public List<ClimateData> LoadClimateData(string stationId)
+        {
+            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            {
+                var sql = $"SELECT * FROM ClimateData WHERE StationId='{stationId}'";
+                var output = cnn.Query<ClimateData>(sql);
+
+                return output.ToList();
+            }
+        }
+
+        public void CreateClimateDataDb()
+        {
+            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            {
+                // Create Table ClimateData if not exists
+                cnn.Execute(@"CREATE TABLE IF NOT EXISTS 'ClimateData' (
+                                'Id' INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+                                'StationId' TEXT NOT NULL,
+                                'StationNumber' INTEGER NOT NULL,
+                                'Date'  INTEGER NOT NULL,
+                                'PressureMiddle'    REAL,
+                                'TempMax'   REAL,
+                                'TempMin'   REAL,
+                                'HumidityMiddle'    INTEGER,
+                                'WindForceMiddle'   REAL,
+                                'SunshineSum'   REAL,
+                            	FOREIGN KEY('StationId') REFERENCES 'Stations'('StationKE') ON DELETE SET DEFAULT ON UPDATE CASCADE
+                            ); ");
+            }
+        }
+
+        public void SaveClimateData(List<ClimateData> climateData)
+        {
+            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            {
+                foreach (var cd in climateData)
+                {
+                    cnn.Execute(@"INSERT INTO ClimateData 
+                                (StationId, StationNumber, Date, PressureMiddle, TempMax, TempMin, HumidityMiddle, WindForceMiddle, SunshineSum) VALUES 
+                                (@StationId, @StationNumber, @Date, @PressureMiddle, @TempMax, @TempMin, @HumidityMiddle, @WindForceMiddle, @SunshineSum)", cd);
+                }
+            }
+        }
+
+        public bool ClimateDataDbExists()
+        {
+            using (IDbConnection cnn = new SQLiteConnection(LoadConnectionString()))
+            {
+                var resClimateData = cnn.Query("SELECT name FROM sqlite_master WHERE type='table' and name='ClimateData'");
+                return resClimateData.Count() > 0;
             }
         }
     }

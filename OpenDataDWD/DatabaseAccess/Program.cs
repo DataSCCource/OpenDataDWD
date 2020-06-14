@@ -16,8 +16,43 @@ namespace DatabaseAccess
             IDatabaseAccess dataAccess = new SqliteDataAccess();
 
             var stations = ReadStationsFromFile();
+            Console.Write("Importing Stations ...");
             ImportStationsIntoDatabase(dataAccess, stations);
+            Console.WriteLine(" Done");
+            Console.WriteLine(" --- ");
+
+            var fileNames = Directory.GetFiles("../../Daten/");
+            foreach (var file in fileNames.Where(fn => fn.Contains("_bis_1999.txt") || fn.Contains("_00_akt.txt")))
+            {
+                var climateData = ReadClimateDataFromFile(file);
+                Console.Write("Importing: " + file +" ...");
+                ImportClimateDataIntoDatabase(dataAccess, climateData);
+                Console.WriteLine(" Done");
+            }
         }
+
+        private static List<ClimateData> ReadClimateDataFromFile(string path)
+        {
+            string id = path.Substring(path.IndexOf("kl_") + 3, 5);
+            List<ClimateData> climateData = new List<ClimateData>();
+            var climatedataStrings = File.ReadAllLines(path, Encoding.GetEncoding(ANSI));
+
+            climatedataStrings.Where(x => x.StartsWith("K")).ToList()
+                           .ForEach(line => climateData.Add(GetClimateDataFromString(id, line)));
+
+            return climateData;
+        }
+
+        private static void ImportClimateDataIntoDatabase(IDatabaseAccess dataAccess, List<ClimateData> climateData)
+        {
+            if(!dataAccess.ClimateDataDbExists()) 
+            {
+                dataAccess.CreateClimateDataDb();
+            }
+
+            dataAccess.SaveClimateData(climateData);
+        }
+
 
         private static void ImportStationsIntoDatabase(IDatabaseAccess dataAccess, List<Station> stations)
         {
@@ -36,7 +71,6 @@ namespace DatabaseAccess
             {
                 dataAccess.SaveStation(station);
             }
-            
         }
 
         private static List<Station> ReadStationsFromFile()
@@ -65,6 +99,26 @@ namespace DatabaseAccess
                 Longitude = float.Parse(stationDataMapper.GetDataFromString(line, StationDataMapper.GEO_LAENGE), CultureInfo.InvariantCulture),
                 StationName = stationDataMapper.GetDataFromString(line, StationDataMapper.STATIONSNAME),
                 FederalState = new FederalState(stationDataMapper.GetDataFromString(line, StationDataMapper.BUNDESLANDNAME))                                
+            };
+        }
+
+        private static ClimateData GetClimateDataFromString(string stationId, string line)
+        {
+            DataMapper stationDataMapper = new ClimateDataMapper();
+
+            return new ClimateData()
+            {
+                Id = 0,
+                StationId = stationId,
+                StationNumber = int.Parse(stationDataMapper.GetDataFromString(line, ClimateDataMapper.STAT)),
+                Date = (long)DateTime.ParseExact(stationDataMapper.GetDataFromString(line, ClimateDataMapper.DATUM), "yyyyMMdd", CultureInfo.InvariantCulture).Subtract(DataMapper.UNIX_TIME).TotalSeconds,
+                PressureMiddle = float.Parse(stationDataMapper.GetDataFromString(line, ClimateDataMapper.PM))/10,
+
+                TempMax = float.Parse(stationDataMapper.GetDataFromString(line, ClimateDataMapper.TXK))/10,
+                TempMin = float.Parse(stationDataMapper.GetDataFromString(line, ClimateDataMapper.TNK))/10,
+                HumidityMiddle = int.Parse(stationDataMapper.GetDataFromString(line, ClimateDataMapper.UPM)),
+                WindForceMiddle = float.Parse(stationDataMapper.GetDataFromString(line, ClimateDataMapper.FMK))/10,
+                SunshineSum = float.Parse(stationDataMapper.GetDataFromString(line, ClimateDataMapper.SDK))/10
             };
         }
 
