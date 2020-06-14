@@ -2,7 +2,7 @@
 
 namespace DatabaseAccess
 {
-    class ClimateDataDataMapper : DataMapper
+    class ClimateDataMapper : DataMapper
     {
         public static readonly int STAT = 0;  // Stationsnummer
         public static readonly int DATUM = 1; // Datum der Messung

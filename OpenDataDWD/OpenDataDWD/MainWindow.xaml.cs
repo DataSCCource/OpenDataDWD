@@ -18,6 +18,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using OxyPlot;
 using DatabaseAccess;
+using OxyPlot.Wpf;
+using OxyPlot.Axes;
 
 namespace OpenDataDWD
 {
@@ -26,15 +28,16 @@ namespace OpenDataDWD
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const int ANSI = 1252;
         private readonly List<Station> stations;
+        private readonly IDatabaseAccess dataAccess;
+        private string currentId;
 
         public MainWindow()
         {
             InitializeComponent();
             myMap.Focus();
 
-            IDatabaseAccess dataAccess = new SqliteDataAccess();
+            dataAccess = new SqliteDataAccess();
 
             if(!dataAccess.StationsDbExists())
             {
@@ -42,8 +45,16 @@ namespace OpenDataDWD
             }
             stations = dataAccess.LoadStations();
 
+            AddDataItems();
             AddDistrictItems(stations);
             AddPushPins(stations);
+        }
+
+        private void AddDataItems()
+        {
+            var dataTypes = Enum.GetNames(typeof(ClimateData.DataTypes)).Select(type => type.Replace('_', ' '));
+            data_cb.ItemsSource = dataTypes;
+            data_cb.SelectedIndex = 0;
         }
 
         private void AddDistrictItems(List<Station> stations)
@@ -62,7 +73,7 @@ namespace OpenDataDWD
             {
                 PushPinWithID pin = new PushPinWithID()
                 {
-                    Id = station.Id,
+                    Id = station.StationKE,
                     Location = new Location(station.Latitude, station.Longitude),
                     ToolTip = station.StationName,
                     Content = station.StationHeight,
@@ -78,16 +89,59 @@ namespace OpenDataDWD
 
         private void Pin_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            Random r = new Random();
-            int stationID = ((PushPinWithID)e.Source).Id;
-            Station station = stations.Where(st => st.Id == stationID).First();
+            string stationID = ((PushPinWithID)e.Source).Id;
+            currentId = stationID;
+            Station station = stations.Where(st => st.StationKE.Equals(stationID)).First();
+            var climateData = dataAccess.LoadClimateData(stationID);
 
+            PlotData(station, climateData);
+        }
+
+        private void PlotData(Station station, List<ClimateData> climateData)
+        {
             myPlot.Title = station.StationName;
-            List<DataPoint> dataPoints = new List<DataPoint>();
-            for (int i = 0; i < 100; i++)
+            myPlot.Axes.Clear();
+
+            var selDataType = ((string)data_cb.SelectedItem).Replace(' ', '_');
+            IEnumerable<double> myData;
+            int nrOfDataPoints = 365;
+            string unit = " C° ";
+
+            switch (selDataType)
             {
-                dataPoints.Add(new DataPoint(i, r.Next(0, 20)));
+                case nameof(ClimateData.DataTypes.Temperatur_Tagesmaximum):
+                default:
+                    myData = climateData.GetRange(climateData.Count - nrOfDataPoints, nrOfDataPoints).Select(dat => Math.Round(dat.TempMax, 1));
+                    break;
+                case nameof(ClimateData.DataTypes.Temperatur_Tagesminimum):
+                    myData = climateData.GetRange(climateData.Count - nrOfDataPoints, nrOfDataPoints).Select(dat => Math.Round(dat.TempMin, 1));
+                    break;
+                case nameof(ClimateData.DataTypes.Luftdruck_Tagesmittel):
+                    myData = climateData.GetRange(climateData.Count - nrOfDataPoints, nrOfDataPoints).Select(dat => Math.Round(dat.PressureMiddle, 1));
+                    unit = " hpa ";
+                    break;
+                case nameof(ClimateData.DataTypes.Relative_Luftfeuchte):
+                    myData = climateData.GetRange(climateData.Count - nrOfDataPoints, nrOfDataPoints).Select(dat => (double)dat.HumidityMiddle);
+                    unit = " % ";
+                    break;
+                case nameof(ClimateData.DataTypes.Windstaerke_Tagesmittel):
+                    myData = climateData.GetRange(climateData.Count - nrOfDataPoints, nrOfDataPoints).Select(dat => Math.Round(dat.WindForceMiddle, 1));
+                    unit = " Bft ";
+                    break;
+                case nameof(ClimateData.DataTypes.Sonnenscheindauer_Tagessumme):
+                    myData = climateData.GetRange(climateData.Count - nrOfDataPoints, nrOfDataPoints).Select(dat => Math.Round(dat.SunshineSum, 1));
+                    unit = " h ";
+                    break;
             }
+
+            List<DataPoint> dataPoints = new List<DataPoint>();
+            for (int i = -nrOfDataPoints; i < -1; i++)
+            {
+                dataPoints.Add(new DataPoint(i, myData.ToArray()[i+nrOfDataPoints]));
+            }
+            var yAxis = new OxyPlot.Wpf.LinearAxis() { Position = AxisPosition.Left, Unit = unit+" --> " };
+            myPlot.Axes.Add(yAxis);
+
             mySeries.ItemsSource = dataPoints;
         }
 
@@ -97,6 +151,17 @@ namespace OpenDataDWD
                 AddPushPins(stations);
             else
                 AddPushPins(stations.Where(station => station.FederalState.FederalStateName.Equals(district_cb.SelectedItem.ToString())).ToList());
+        }
+        
+        private void Data_cb_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if(currentId != null)
+            {
+                Station station = stations.Where(st => st.StationKE.Equals(currentId)).First();
+                var climateData = dataAccess.LoadClimateData(currentId);
+
+                PlotData(station, climateData);
+            }
         }
     }
 }
