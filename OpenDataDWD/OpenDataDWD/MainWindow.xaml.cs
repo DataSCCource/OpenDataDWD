@@ -30,12 +30,15 @@ namespace OpenDataDWD
     {
         private readonly List<Station> stations;
         private readonly IDatabaseAccess dataAccess;
+        private List<ClimateData> currentClimateData;
         private string currentId;
+        private AggregateData aggregateData;
 
         public MainWindow()
         {
             InitializeComponent();
             myMap.Focus();
+            aggregateData = AggregateData.None;
 
             dataAccess = new SqliteDataAccess();
 
@@ -91,58 +94,100 @@ namespace OpenDataDWD
         {
             string stationID = ((PushPinWithID)e.Source).Id;
             currentId = stationID;
-            Station station = stations.Where(st => st.StationKE.Equals(stationID)).First();
-            var climateData = dataAccess.LoadClimateData(stationID);
 
-            PlotData(station, climateData);
+            PlotData();
         }
 
-        private void PlotData(Station station, List<ClimateData> climateData)
+
+        private void PlotData()
         {
-            myPlot.Title = station.StationName;
-            myPlot.Axes.Clear();
-
-            var selDataType = ((string)data_cb.SelectedItem).Replace(' ', '_');
-            IEnumerable<double> myData;
-            int nrOfDataPoints = 365;
-            string unit = " C° ";
-
-            switch (selDataType)
+            if (currentId != null)
             {
-                case nameof(ClimateData.DataTypes.Temperatur_Tagesmaximum):
-                default:
-                    myData = climateData.GetRange(climateData.Count - nrOfDataPoints, nrOfDataPoints).Select(dat => Math.Round(dat.TempMax, 1));
-                    break;
-                case nameof(ClimateData.DataTypes.Temperatur_Tagesminimum):
-                    myData = climateData.GetRange(climateData.Count - nrOfDataPoints, nrOfDataPoints).Select(dat => Math.Round(dat.TempMin, 1));
-                    break;
-                case nameof(ClimateData.DataTypes.Luftdruck_Tagesmittel):
-                    myData = climateData.GetRange(climateData.Count - nrOfDataPoints, nrOfDataPoints).Select(dat => Math.Round(dat.PressureMiddle, 1));
-                    unit = " hpa ";
-                    break;
-                case nameof(ClimateData.DataTypes.Relative_Luftfeuchte):
-                    myData = climateData.GetRange(climateData.Count - nrOfDataPoints, nrOfDataPoints).Select(dat => (double)dat.HumidityMiddle);
-                    unit = " % ";
-                    break;
-                case nameof(ClimateData.DataTypes.Windstaerke_Tagesmittel):
-                    myData = climateData.GetRange(climateData.Count - nrOfDataPoints, nrOfDataPoints).Select(dat => Math.Round(dat.WindForceMiddle, 1));
-                    unit = " Bft ";
-                    break;
-                case nameof(ClimateData.DataTypes.Sonnenscheindauer_Tagessumme):
-                    myData = climateData.GetRange(climateData.Count - nrOfDataPoints, nrOfDataPoints).Select(dat => Math.Round(dat.SunshineSum, 1));
-                    unit = " h ";
-                    break;
-            }
+                var dateFrom = dateFrom_dp.SelectedDate ?? DateTime.Now.AddYears(-1);
+                var dateTo = dateTo_dp.SelectedDate ?? DateTime.Now;
 
-            List<DataPoint> dataPoints = new List<DataPoint>();
-            for (int i = -nrOfDataPoints; i < -1; i++)
-            {
-                dataPoints.Add(new DataPoint(i, myData.ToArray()[i+nrOfDataPoints]));
-            }
-            var yAxis = new OxyPlot.Wpf.LinearAxis() { Position = AxisPosition.Left, Unit = unit+" --> " };
-            myPlot.Axes.Add(yAxis);
+                currentClimateData = dataAccess.LoadClimateData(currentId, dateFrom, dateTo);
+                Station station = stations.Where(st => st.StationKE.Equals(currentId)).First();
+                
+                myPlot.Title = station.StationName;
+                myPlot.Axes.Clear();
 
-            mySeries.ItemsSource = dataPoints;
+                string selector;
+                switch (aggregateData)
+                {
+                    case AggregateData.None:
+                    default:
+                        selector = null;
+                        break;
+                    case AggregateData.Monthly:
+                        selector = "MMM yyyy";
+                        break;
+                    case AggregateData.Yearly:
+                        selector = "yyyy";
+                        break;
+                }
+
+                IEnumerable<ClimateData> aggregatedClimateData;
+                if (selector == null)
+                {
+                    aggregatedClimateData = currentClimateData;
+                } 
+                else
+                {
+                     aggregatedClimateData = currentClimateData.GroupBy(ccd => ccd.GetDate().ToString(selector)).Select(ccd => new ClimateData
+                    {
+                        Date = ccd.First().Date,
+                        PressureMiddle = ccd.Where(c => c.HumidityMiddle>=-999).Average(c => c.PressureMiddle),
+                        TempMax = ccd.Where(c => c.TempMax > -999).Average(c => c.TempMax),
+                        TempMin = ccd.Where(c => c.TempMin > -999).Average(c => c.TempMin),
+                        HumidityMiddle = (int)ccd.Where(c => c.HumidityMiddle > -99).Average(c => c.HumidityMiddle),
+                        WindForceMiddle = (int)ccd.Where(c => c.WindForceMiddle > -99).Average(c => c.WindForceMiddle),
+                        SunshineSum = (int)ccd.Where(c => c.SunshineSum > -99).Average(c => c.SunshineSum),
+                    }).ToList();
+                }
+
+
+
+                var selDataType = ((string)data_cb.SelectedItem).Replace(' ', '_');
+                IEnumerable<DataPoint> myData;
+                string unit = " C° ";
+            
+                switch (selDataType)
+                {
+                    case nameof(ClimateData.DataTypes.Temperatur_Tagesmaximum):
+                    default:
+                        myData = aggregatedClimateData.Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), Math.Round(dat.TempMax, 1)));
+                        break;
+                    case nameof(ClimateData.DataTypes.Temperatur_Tagesminimum):
+                        myData = aggregatedClimateData.Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), Math.Round(dat.TempMin, 1)));
+                        break;
+                    case nameof(ClimateData.DataTypes.Luftdruck_Tagesmittel):
+                        myData = aggregatedClimateData.Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), Math.Round(dat.PressureMiddle, 1)));
+                        unit = " hpa ";
+                        break;
+                    case nameof(ClimateData.DataTypes.Relative_Luftfeuchte):
+                        myData = aggregatedClimateData.Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), (double)dat.HumidityMiddle));
+                        unit = " % ";
+                        break;
+                    case nameof(ClimateData.DataTypes.Windstaerke_Tagesmittel):
+                        myData = aggregatedClimateData.Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), Math.Round(dat.WindForceMiddle, 1)));
+                        unit = " Bft ";
+                        break;
+                    case nameof(ClimateData.DataTypes.Sonnenscheindauer_Tagessumme):
+                        myData = aggregatedClimateData.Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), Math.Round(dat.SunshineSum, 1)));
+                        unit = " h ";
+                        break;
+                }
+
+                int count = myData.Count();
+                int step = count / 365;
+                var yAxis = new OxyPlot.Wpf.LinearAxis() { Position = AxisPosition.Left, Unit = unit+" --> " };
+                var xAxis = new OxyPlot.Wpf.DateTimeAxis() { Position = AxisPosition.Bottom };
+                myPlot.Axes.Add(yAxis);
+                myPlot.Axes.Add(xAxis);
+
+                mySeries.ItemsSource = myData;
+            }
         }
 
         private void District_cb_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -155,13 +200,27 @@ namespace OpenDataDWD
         
         private void Data_cb_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if(currentId != null)
-            {
-                Station station = stations.Where(st => st.StationKE.Equals(currentId)).First();
-                var climateData = dataAccess.LoadClimateData(currentId);
-
-                PlotData(station, climateData);
-            }
+            PlotData();
         }
+
+        private void Group_rb_Checked(object sender, RoutedEventArgs e)
+        {
+            if (no_rb.IsChecked ?? false)
+            {
+                aggregateData = AggregateData.None;
+            }
+            else if (mon_rb.IsChecked ?? false)
+            {
+                aggregateData = AggregateData.Monthly;
+            }
+            else
+            {
+                aggregateData = AggregateData.Yearly;
+            }
+
+            PlotData();
+        }
+
+        enum AggregateData { None, Monthly, Yearly }
     }
 }

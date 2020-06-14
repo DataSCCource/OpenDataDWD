@@ -7,12 +7,13 @@
         xmlns:oxy="http://oxyplot.org/wpf"
         xmlns:m="clr-namespace:Microsoft.Maps.MapControl.WPF;assembly=Microsoft.Maps.MapControl.WPF"
         mc:Ignorable="d"
-        Title="Klimadaten des DWD" Height="900" Width="800">
+        Title="Klimadaten des DWD" Height="1000" Width="900">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="10"/>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="2*"/>
+            <RowDefinition Height="40"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="10"/>
         </Grid.RowDefinitions>
@@ -26,10 +27,27 @@
             <ComboBox x:Name="district_cb" SelectionChanged="District_cb_SelectionChanged" FontSize="20" VerticalAlignment="Center" Width="300" IsEditable="False"/>
         </StackPanel>
         <m:Map Grid.Row="2" Grid.Column="1" CredentialsProvider="As6muUH5TfUxFMMRuZzHWNkWUbkNReiyxn7j3ofFdVl9fCglmRWgCivf6EHy-noQ"
-               Center="51.221918,10.313215" ZoomLevel="5.8" x:Name="myMap">
-            
-        </m:Map>
-        <oxy:Plot x:Name="myPlot" Grid.Row="3" Grid.Column="1">
+               Center="51.221918,10.313215" ZoomLevel="5.8" x:Name="myMap"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="3" Grid.Column="1">
+            <Label FontSize="12" VerticalAlignment="Center">Daten:</Label>
+            <ComboBox x:Name="data_cb" SelectionChanged="Data_cb_SelectionChanged" FontSize="12" VerticalAlignment="Center" IsEditable="False"/>
+
+            <Label FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0">Datum:</Label>
+            <DatePicker x:Name="dateFrom_dp" SelectedDateChanged="Data_cb_SelectionChanged" SelectedDateFormat="Short" SelectedDate="4/16/2019" FirstDayOfWeek="Monday" VerticalAlignment="Center" FontSize="12" Width="125"/>
+            <DatePicker x:Name="dateTo_dp" SelectedDateChanged="Data_cb_SelectionChanged" SelectedDateFormat="Short" SelectedDate="4/16/2020" FirstDayOfWeek="Monday" VerticalAlignment="Center" FontSize="12" Width="125"/>
+
+            <Label FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0">Zusammenfassen:</Label>
+            <RadioButton x:Name="no_rb" Checked="Group_rb_Checked" VerticalAlignment="Center" FontSize="12" Margin="10,0,0,0" IsChecked="True">nein</RadioButton>
+            <RadioButton x:Name="mon_rb" Checked="Group_rb_Checked" VerticalAlignment="Center" FontSize="12" Margin="10,0,0,0">monatlich</RadioButton>
+            <RadioButton x:Name="year_rb" Checked="Group_rb_Checked" VerticalAlignment="Center" FontSize="12" Margin="10,0,0,0">jährlich</RadioButton>
+            <!-- 
+            <CheckBox x:Name="monthly_cb" Checked="Monthly_cb_Checked" Unchecked="Monthly_cb_Checked" VerticalAlignment="Center"/>
+            -->
+        </StackPanel>
+
+
+        <oxy:Plot x:Name="myPlot" Grid.Row="4" Grid.Column="1">
             <oxy:Plot.Series>
                 <oxy:LineSeries x:Name="mySeries"/>
             </oxy:Plot.Series>
