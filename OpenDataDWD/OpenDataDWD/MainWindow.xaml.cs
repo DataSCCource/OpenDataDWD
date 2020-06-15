@@ -159,11 +159,11 @@ namespace OpenDataDWD
         private void Group_rb_Checked(object sender, RoutedEventArgs e)
         {
             if (no_rb.IsChecked ?? false)
-                pLogic.SetAggregateData(AverageData.None);
+                pLogic.SetAverageDataType(AverageDataType.None);
             else if (mon_rb.IsChecked ?? false)
-                pLogic.SetAggregateData(AverageData.Monthly);
+                pLogic.SetAverageDataType(AverageDataType.Monthly);
             else
-                pLogic.SetAggregateData(AverageData.Yearly);
+                pLogic.SetAverageDataType(AverageDataType.Yearly);
 
             PlotData();
         }

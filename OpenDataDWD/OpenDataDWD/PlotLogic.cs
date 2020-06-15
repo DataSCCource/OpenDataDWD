@@ -11,8 +11,9 @@ using System.Windows.Controls;
 
 namespace OpenDataDWD
 {
-    enum AverageData { None, Monthly, Yearly }
-
+    /// <summary>
+    /// Logic to plot Data based on climate data
+    /// </summary>
     class PlotLogic
     {
         public IDatabaseAccess DataAccess { get; private set; }
@@ -20,8 +21,12 @@ namespace OpenDataDWD
         public List<ClimateData> CurrentClimateData { get; private set; }
 
         private string currentId;
-        private AverageData averageData;
+        private AverageDataType averageDataType;
 
+        /// <summary>
+        /// Create Plotlogic object
+        /// </summary>
+        /// <param name="dataAccess"></param>
         public PlotLogic(IDatabaseAccess dataAccess)
         {
             this.DataAccess = dataAccess;
@@ -31,19 +36,35 @@ namespace OpenDataDWD
             }
             this.Stations = DataAccess.LoadStations();
 
-            averageData = AverageData.None;
+            averageDataType = AverageDataType.None;
         }
 
-        public void SetAggregateData(AverageData aggregateData)
+        /// <summary>
+        /// Set average data type
+        /// </summary>
+        /// <param name="averageDataType">None, Monthly or Yearly</param>
+        public void SetAverageDataType(AverageDataType averageDataType)
         {
-            this.averageData = aggregateData;
+            this.averageDataType = averageDataType;
         }
 
+        /// <summary>
+        /// Set current pushpin / station Id
+        /// </summary>
+        /// <param name="currentId"></param>
         public void SetCurrentId(string currentId)
         {
             this.currentId = currentId;
         }
 
+        /// <summary>
+        /// Plot data based on given parameters
+        /// </summary>
+        /// <param name="myPlot"></param>
+        /// <param name="mySeries"></param>
+        /// <param name="dateFrom_dp"></param>
+        /// <param name="dateTo_dp"></param>
+        /// <param name="selDataType"></param>
         public void PlotData(Plot myPlot, LineSeries mySeries, DatePicker dateFrom_dp, DatePicker dateTo_dp, string selDataType)
         {
             if (currentId != null)
@@ -68,20 +89,19 @@ namespace OpenDataDWD
                 myPlot.Axes.Clear();
 
                 string selector;
-                switch (averageData)
+                switch (averageDataType)
                 {
-                    case AverageData.None:
+                    case AverageDataType.None:
                     default:
                         selector = null;
                         break;
-                    case AverageData.Monthly:
+                    case AverageDataType.Monthly:
                         selector = "MMM yyyy";
                         break;
-                    case AverageData.Yearly:
+                    case AverageDataType.Yearly:
                         selector = "yyyy";
                         break;
                 }
-
 
                 IEnumerable<ClimateData> aggregatedClimateData = new List<ClimateData>();
                 if (selector == null)
@@ -153,4 +173,6 @@ namespace OpenDataDWD
             return Stations.Where(st => st.StationKE.Equals(currentId)).First();
         }
     }
+
+    enum AverageDataType { None, Monthly, Yearly }
 }
