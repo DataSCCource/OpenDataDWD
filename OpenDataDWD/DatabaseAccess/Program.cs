@@ -18,23 +18,24 @@ namespace DatabaseAccess
         static void Main()
         {
             IDatabaseAccess dataAccess = new SqliteDataAccess();
+            string pathToData = "../../Daten/";
 
-            Console.Write("Importing stations ...");
-            var stations = ReadStationsFromFile();
+            Console.Write("Importing stations ... ");
+            var stations = ReadStationsFromFile(pathToData + "KL_Standardformate_Beschreibung_Stationen.txt");
             ImportStationsIntoDatabase(dataAccess, stations);
-            Console.WriteLine(" Done importing stations");
+            Console.WriteLine("Done importing stations");
             Console.WriteLine(" --- ");
 
 
             // Data files have to be in the Daten-directory of this project to be recognized
-            Console.Write("Importing climatedata ...");
-            var fileNames = Directory.GetFiles("../../Daten/");
+            Console.WriteLine("Importing climatedata ...");
+            var fileNames = Directory.GetFiles(pathToData);
             foreach (var file in fileNames.Where(fn => fn.Contains("_bis_1999.txt") || fn.Contains("_00_akt.txt")))
             {
                 var climateData = ReadClimateDataFromFile(file);
-                Console.Write("Importing: " + file +" ...");
+                Console.Write("Importing: " + file +" ... ");
                 ImportClimateDataIntoDatabase(dataAccess, climateData);
-                Console.WriteLine(" Done");
+                Console.WriteLine("Done");
             }
         }
 
@@ -101,10 +102,10 @@ namespace DatabaseAccess
         /// Read the available climate stations from file and parse into list
         /// </summary>
         /// <returns>List of Station objects</returns>
-        private static List<Station> ReadStationsFromFile()
+        private static List<Station> ReadStationsFromFile(string path)
         {
             List<Station> stations = new List<Station>();
-            var stationsStrings = File.ReadAllLines("../../Daten/KL_Standardformate_Beschreibung_Stationen.txt", Encoding.GetEncoding(ANSI));
+            var stationsStrings = File.ReadAllLines(path, Encoding.GetEncoding(ANSI));
 
             stationsStrings.Where(x => x.StartsWith("10")).ToList()
                            .ForEach(line => stations.Add(GetStationFromString(line)));

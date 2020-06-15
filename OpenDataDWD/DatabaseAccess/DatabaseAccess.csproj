@@ -52,7 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DataMapper.cs" />
+    <Compile Include="Mapper\DataMapper.cs" />
     <Compile Include="IDatabaseAccess.cs" />
     <Compile Include="Model\FederalState.cs" />
     <Compile Include="Model\ClimateData.cs" />
@@ -60,8 +60,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqliteDataAccess.cs" />
-    <Compile Include="ClimateDataMapper.cs" />
-    <Compile Include="StationDataMapper.cs" />
+    <Compile Include="Mapper\ClimateDataMapper.cs" />
+    <Compile Include="Mapper\StationDataMapper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
