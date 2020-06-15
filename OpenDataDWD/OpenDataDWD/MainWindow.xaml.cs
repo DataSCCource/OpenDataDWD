@@ -9,6 +9,8 @@ using System.Windows.Input;
 using OxyPlot;
 using DatabaseAccess;
 using OxyPlot.Axes;
+using System.Windows.Navigation;
+using System.Windows.Media;
 
 namespace OpenDataDWD
 {
@@ -86,7 +88,8 @@ namespace OpenDataDWD
                 myMap.Children.Add(pin);
                 pin.MouseRightButtonDown += Pin_MouseUp;
 
-                string toolTipString = $"Kennung: {station.StationKE}\nID: {station.Id}\nName: {station.StationName}\nBundesland: {station.FederalState.FederalStateName}";
+                string toolTipString = $"Name: {station.StationName}\nBundesland: {station.FederalState.FederalStateName}\nKennung: {station.StationKE}\nID: {station.Id}\nZeitraum: {station.GetDataFromDateTime():dd.MM.yyyy} - {station.GetDataToDateTime():dd.MM.yyyy}";
+                
                 ToolTipService.SetToolTip(pin, toolTipString);
             });
         }
@@ -98,8 +101,21 @@ namespace OpenDataDWD
         /// <param name="e">Mouse Event</param>
         private void Pin_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            string stationID = ((PushPinWithID)e.Source).Id;
-            currentId = stationID;
+            foreach (var child in myMap.Children)
+            {
+                if(child is PushPinWithID pushPin) {
+                    pushPin.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFE56910"));
+                }
+            }
+
+            var clickedPushPin = (PushPinWithID)e.Source;
+            currentId = clickedPushPin.Id;
+            clickedPushPin.Background = new SolidColorBrush(Colors.YellowGreen);
+            Station station = GetCurrentStation();
+
+            dateTo_dp.SelectedDate = station.GetDataToDateTime();
+            dateFrom_dp.SelectedDate = station.GetDataToDateTime().AddYears(-1);
+            no_rb.IsChecked = true;
 
             PlotData();
         }
@@ -111,13 +127,22 @@ namespace OpenDataDWD
         {
             if (currentId != null)
             {
-                var dateFrom = dateFrom_dp.SelectedDate ?? DateTime.Now.AddYears(-1);
-                var dateTo = dateTo_dp.SelectedDate ?? DateTime.Now;
+                Station station = GetCurrentStation();
+
+                // Set filter date the last year of data, if no valid "from" / "to" dates where selected
+                var dateTo = dateTo_dp.SelectedDate ?? station.GetDataToDateTime();
+                var dateFrom = dateFrom_dp.SelectedDate ?? station.GetDataToDateTime().AddYears(-1);
+                
+                // Set displayed dates to data range and limit to selected dates
+                // e.g. If "To-Date" is set to 01.01.2020, the "From-Date" after that date is not possible
+                dateFrom_dp.DisplayDateStart = station.GetDataFromDateTime();
+                dateFrom_dp.DisplayDateEnd = dateTo_dp.SelectedDate;
+                dateTo_dp.DisplayDateEnd = station.GetDataToDateTime();
+                dateTo_dp.DisplayDateStart = dateFrom_dp.SelectedDate;
 
                 currentClimateData = dataAccess.LoadClimateData(currentId, dateFrom, dateTo).OrderBy(cd => cd.Date).ToList();
-                Station station = stations.Where(st => st.StationKE.Equals(currentId)).First();
                 
-                myPlot.Title = station.StationName;
+                myPlot.Title = station.StationName + $" ({station.GetDataFromDateTime():dd.MM.yyyy} - {station.GetDataToDateTime():dd.MM.yyyy})";
                 myPlot.Axes.Clear();
 
                 string selector;
@@ -135,26 +160,24 @@ namespace OpenDataDWD
                         break;
                 }
 
-                IEnumerable<ClimateData> aggregatedClimateData;
+                IEnumerable<ClimateData> aggregatedClimateData = new List<ClimateData>();
                 if (selector == null)
                 {
                     aggregatedClimateData = currentClimateData;
                 } 
                 else
                 {
-                     aggregatedClimateData = currentClimateData.GroupBy(ccd => ccd.GetDate().ToString(selector)).Select(ccd => new ClimateData
-                    {
-                        Date = ccd.First().Date,
-                        PressureMiddle = ccd.Where(c => c.HumidityMiddle>=-999).Average(c => c.PressureMiddle),
-                        TempMax = ccd.Where(c => c.TempMax > -99).Average(c => c.TempMax),
-                        TempMin = ccd.Where(c => c.TempMin > -99).Average(c => c.TempMin),
-                        HumidityMiddle = (int)ccd.Where(c => c.HumidityMiddle > -99).Average(c => c.HumidityMiddle),
-                        WindForceMiddle = (int)ccd.Where(c => c.WindForceMiddle > 0).Average(c => c.WindForceMiddle),
-                        SunshineSum = (int)ccd.Where(c => c.SunshineSum > 0).Average(c => c.SunshineSum),
-                    }).ToList();
+                    aggregatedClimateData = currentClimateData.GroupBy(ccd1 => ccd1.GetDate().ToString(selector)).Select(ccd => new ClimateData
+                        {
+                            Date = ccd.First().Date,
+                            TempMax = ccd.Where(c => c.TempMax > -99).Select(c => c.TempMax).DefaultIfEmpty(-9999).Average(),
+                            TempMin = ccd.Where(c => c.TempMin > -99).Select(c => c.TempMin).DefaultIfEmpty(-9999).Average(),
+                            PressureMiddle = ccd.Where(c => c.PressureMiddle >= 0).Select(c => c.PressureMiddle).DefaultIfEmpty(-9999).Average(),
+                            HumidityMiddle = (int)ccd.Where(c => c.HumidityMiddle > -99).Select(c => c.HumidityMiddle).DefaultIfEmpty(-9999).Average(),
+                            WindForceMiddle = (int)ccd.Where(c => c.WindForceMiddle > 0).Select(c => c.WindForceMiddle).DefaultIfEmpty(-9999).Average(),
+                            SunshineSum = (int)ccd.Where(c => c.SunshineSum > 0).Select(c=> c.SunshineSum).DefaultIfEmpty(-9999).Average(),
+                        }).ToList();
                 }
-
-
 
                 var selDataType = ((string)data_cb.SelectedItem).Replace(' ', '_');
                 IEnumerable<DataPoint> myData;
@@ -164,21 +187,21 @@ namespace OpenDataDWD
                 {
                     case nameof(ClimateData.DataTypes.Temperatur_Tagesmaximum):
                     default:
-                        myData = aggregatedClimateData.Where(c => c.TempMin > -99).Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), Math.Round(dat.TempMax, 1)));
+                        myData = aggregatedClimateData.Where(c => c.TempMax > -99).Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), Math.Round(dat.TempMax, 1)));
                         break;
                     case nameof(ClimateData.DataTypes.Temperatur_Tagesminimum):
                         myData = aggregatedClimateData.Where(c => c.TempMin > -99).Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), Math.Round(dat.TempMin, 1)));
                         break;
                     case nameof(ClimateData.DataTypes.Luftdruck_Tagesmittel):
-                        myData = aggregatedClimateData.Where(c => c.HumidityMiddle >= -999).Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), Math.Round(dat.PressureMiddle, 1)));
+                        myData = aggregatedClimateData.Where(c => c.PressureMiddle >= 0).Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), Math.Round(dat.PressureMiddle, 1)));
                         unit = " hpa ";
                         break;
                     case nameof(ClimateData.DataTypes.Relative_Luftfeuchte):
-                        myData = aggregatedClimateData.Where(c => c.HumidityMiddle > -99).Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), (double)dat.HumidityMiddle));
+                        myData = aggregatedClimateData.Where(c => c.HumidityMiddle >= 0).Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), (double)dat.HumidityMiddle));
                         unit = " % ";
                         break;
                     case nameof(ClimateData.DataTypes.Windstaerke_Tagesmittel):
-                        myData = aggregatedClimateData.Where(c => c.WindForceMiddle > 0).Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), Math.Round(dat.WindForceMiddle, 1)));
+                        myData = aggregatedClimateData.Where(c => c.WindForceMiddle >= 0).Select(dat => new DataPoint(OxyPlot.Axes.DateTimeAxis.ToDouble(dat.GetDate()), Math.Round(dat.WindForceMiddle, 1)));
                         unit = " Bft ";
                         break;
                     case nameof(ClimateData.DataTypes.Sonnenscheindauer_Tagessumme):
@@ -245,5 +268,9 @@ namespace OpenDataDWD
         }
         enum AggregateData { None, Monthly, Yearly }
 
+        public Station GetCurrentStation()
+        {
+            return stations.Where(st => st.StationKE.Equals(currentId)).First();
+        }
     }
 }
